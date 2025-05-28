@@ -52,8 +52,9 @@ Run the script from your terminal:
 ## Roadmap
 I'm not going to add many features, as I want to keep this script manageable.
 Anyways, here are some possible enhancement I'd like to add:
-[ ] Show container port mappings
-[ ] Show container volumes
-[ ] Show container network info
-[ ] Ability to export a container
-[ ] Ability to create a new image from the container
+
+- [ ] Show container port mappings
+- [ ] Show container volumes
+- [ ] Show container network info
+- [ ] Ability to export a container
+- [ ] Ability to create a new image from the container
