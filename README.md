@@ -58,3 +58,6 @@ Anyways, here are some possible enhancement I'd like to add:
 - [ ] Show container network info
 - [ ] Ability to export a container
 - [ ] Ability to create a new image from the container
+
+## License
+This project is published under the [MIT license](LICENSE).
