@@ -120,7 +120,7 @@ view_logs() {
     echo "1) Show last 50 lines"
     echo "2) Follow logs (tail -f)"
     echo "3) Show all logs"
-    read -p "Enter choice [1-3]: " log_choice
+    read -r -p "Enter choice [1-3]: " log_choice
     
     case $log_choice in
         1)
@@ -162,11 +162,11 @@ exec_custom_command() {
     local container_name="$2"
     
     echo -e "${BLUE}Execute custom command in $container_name${NC}"
-    read -p "Enter command: " custom_cmd
+    read -r -p "Enter command: " custom_cmd
     
     if [ -n "$custom_cmd" ]; then
         echo -e "${YELLOW}Executing: $custom_cmd${NC}"
-        docker exec -it "$container_id" $custom_cmd
+        docker exec -it "$container_id" "$custom_cmd"
     else
         echo -e "${RED}No command entered${NC}"
     fi
@@ -195,28 +195,28 @@ main() {
         while true; do
             echo
             show_actions "$container_name"
-            read -p "Enter choice: " action
+            read -r -p "Enter choice: " action
             
             case $action in
                 1)
                     stop_container "$container_id" "$container_name"
-                    read -p "Press Enter to continue..."
+                    read -r -p "Press Enter to continue..."
                     break  # Go back to container selection since container is stopped
                     ;;
                 2)
                     restart_container "$container_id" "$container_name"
-                    read -p "Press Enter to continue..."
+                    read -r -p "Press Enter to continue..."
                     ;;
                 3)
                     view_logs "$container_id" "$container_name"
-                    read -p "Press Enter to continue..."
+                    read -r -p "Press Enter to continue..."
                     ;;
                 4)
                     exec_bash "$container_id" "$container_name"
                     ;;
                 5)
                     exec_custom_command "$container_id" "$container_name"
-                    read -p "Press Enter to continue..."
+                    read -r -p "Press Enter to continue..."
                     ;;
                 6)
                     break  # Go back to container selection
