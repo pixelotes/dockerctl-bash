@@ -3,6 +3,10 @@
 # dockerctl - Interactive Docker container management script
 # Requirements: docker, fzf
 
+# ====================
+# VARIABLES
+# ====================
+
 set -e
 
 # Colors for output
@@ -11,6 +15,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# ====================
+# DEPENDENCY CHECK
+# ====================
 
 # Check if required tools are installed
 check_dependencies() {
@@ -25,6 +33,10 @@ check_dependencies() {
         exit 1
     fi
 }
+
+# ====================
+# HELPER FUNCTIONS
+# ====================
 
 # Check if Docker daemon is running
 check_docker() {
@@ -171,6 +183,10 @@ exec_custom_command() {
         echo -e "${RED}No command entered${NC}"
     fi
 }
+
+# ==================
+# MAIN
+# ==================
 
 # Main loop
 main() {
