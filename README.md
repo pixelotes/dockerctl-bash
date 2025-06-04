@@ -53,6 +53,7 @@ Run the script from your terminal:
 I'm not going to add many features, as I want to keep this script manageable.
 Anyways, here are some possible enhancement I'd like to add:
 
+- [ ] Add a key to toggle between active and stopped containers
 - [ ] Show container port mappings
 - [ ] Show container volumes
 - [ ] Show container network info
