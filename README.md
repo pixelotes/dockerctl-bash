@@ -20,6 +20,8 @@ This approach prioritizes ease of use and broad accessibility.
     * View logs (with options for tailing, showing last N lines, or all logs)
     * Execute a shell (`bash` or `sh`)
     * Execute a custom command
+    * Export containers
+    * Create images
 * **Dependency Checks:** Verifies that `docker` and `fzf` are installed and that the Docker daemon is running.
 * **User-Friendly Output:** Uses colors to differentiate messages (errors, warnings, success).
 
@@ -54,11 +56,11 @@ I'm not going to add many features, as I want to keep this script manageable.
 Anyways, here are some possible enhancement I'd like to add:
 
 - [ ] Add a key to toggle between active and stopped containers
-- [ ] Show container port mappings
-- [ ] Show container volumes
+- [X] Show container port mappings
+- [X] Show container volumes
 - [ ] Show container network info
-- [ ] Ability to export a container
-- [ ] Ability to create a new image from the container
+- [X] Ability to export a container
+- [X] Ability to create a new image from the container
 
 ## License
 This project is published under the [MIT license](LICENSE).
