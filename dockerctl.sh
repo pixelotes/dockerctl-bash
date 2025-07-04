@@ -26,7 +26,7 @@ check_dependencies() {
         echo -e "${RED}Error: docker is not installed or not in PATH${NC}"
         exit 1
     fi
-    
+
     if ! command -v fzf &> /dev/null; then
         echo -e "${RED}Error: fzf is not installed or not in PATH${NC}"
         echo "Install fzf: https://github.com/junegunn/fzf#installation"
@@ -35,7 +35,7 @@ check_dependencies() {
 }
 
 # ====================
-# HELPER FUNCTIONS
+# FUNCTIONS
 # ====================
 
 # Check if Docker daemon is running
@@ -46,25 +46,37 @@ check_docker() {
     fi
 }
 
-# Get running containers with formatted output
+# Get running containers with status icon
 get_containers() {
-    docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Command}}\t{{.CreatedAt}}\t{{.Status}}\t{{.Names}}" | tail -n +2
+    # No-op, icons will be added next to the container ID in the output below
+    docker ps -a --format "{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}" | while IFS=$'\t' read -r id image status name; do
+        # Determine status icon
+        if [[ "$status" == Up* ]]; then
+            icon="🟢"
+        elif [[ "$status" == Exited* ]]; then
+            icon="🔴"
+        elif [[ "$status" == Created* ]]; then
+            icon="🟡"
+        else
+            icon="⚪"
+        fi
+        printf "%s\t%s\t%s\n" "$id" "$icon $name" "$image"
+    done
 }
 
 # Select container using fzf
 select_container() {
     local containers
     containers=$(get_containers)
-    
+
     if [ -z "$containers" ]; then
         echo -e "${YELLOW}No running containers found${NC}"
         exit 0
     fi
-    
     echo "$containers" | fzf \
         --header="Select a container:" \
         --header-lines=0 \
-        --preview='docker inspect {1} | head -20' \
+        --preview='docker inspect {1} | jq -r " .[] | \"Id: \(.Id)\nName: \(.Name)\nCreated: \(.Created)\nStatus: \(.State.Status)\nHealth: \(.State.Health.Status)\nImage: \(.Config.Image)\nRestart policy: \(.HostConfig.RestartPolicy.Name)\nBinds: \n\((.HostConfig.Binds // [])[]? // \"none\"))\nPorts:\n\(.HostConfig.PortBindings)\""' \
         --preview-window=right:50%:wrap \
         --prompt="Container> " \
         --height=80% \
@@ -82,25 +94,71 @@ get_container_name() {
     echo "$1" | awk '{print $NF}'
 }
 
+# Get container name from ID
+get_container_name_by_id() {
+    local container_id="$1"
+    docker inspect -f '{{.Name}}' "$container_id" | sed 's|^/||'  # Remove leading slash
+}
+
+# Get the status icon for a container's status
+get_status_icon() {
+    # Extract the status from docker using the container ID or name as argument
+    local status=""
+    status=$(docker inspect -f '{{.State.Status}}' "$1")
+
+    if [[ "$status" == "running" ]]; then
+        echo "🟢"
+    elif [[ "$status" == "exited" ]]; then
+        echo "🔴"
+    else
+        echo "⚪"
+    fi
+}
+
 # Show action menu
 show_actions() {
+    clear
     local container_name="$1"
-    echo -e "${BLUE}Container: $container_name${NC}"
+    local container_id="$2"
+    local container_image="$3"
+    local container_icon=""
+    container_icon="$(get_status_icon "$container_id")"
+    echo -e "${BLUE}Container: $container_icon $container_name${NC}"
+    echo -e "${YELLOW}ID: $container_id${NC}"
+    echo -e "${GREEN}Image: $container_image${NC}"
+    echo "---------------------------------"
     echo "Choose an action:"
-    echo "1) Stop container"
-    echo "2) Restart container"
-    echo "3) View logs"
-    echo "4) Exec bash"
-    echo "5) Exec custom command"
-    echo "6) Back to container selection"
+    echo "---------------------------------"
+    echo "1) Start container"
+    echo "2) Stop container"
+    echo "3) Restart container"
+    echo "4) View logs"
+    echo "5) Exec bash"
+    echo "6) Exec custom command"
+    echo "7) Export container to tar"
+    echo "8) Create image from container"
+    echo "b) Back to container selection"
     echo "q) Quit"
+}
+
+# Start container
+start_container() {
+    local container_id="$1"
+    local container_name="$2"
+
+    echo -e "${YELLOW}Starting container $container_name...${NC}"
+    if docker start "$container_id"; then
+        echo -e "${GREEN}Container $container_name started successfully${NC}"
+    else
+        echo -e "${RED}Failed to start container $container_name${NC}"
+    fi
 }
 
 # Stop container
 stop_container() {
     local container_id="$1"
     local container_name="$2"
-    
+
     echo -e "${YELLOW}Stopping container $container_name...${NC}"
     if docker stop "$container_id"; then
         echo -e "${GREEN}Container $container_name stopped successfully${NC}"
@@ -113,7 +171,7 @@ stop_container() {
 restart_container() {
     local container_id="$1"
     local container_name="$2"
-    
+
     echo -e "${YELLOW}Restarting container $container_name...${NC}"
     if docker restart "$container_id"; then
         echo -e "${GREEN}Container $container_name restarted successfully${NC}"
@@ -126,14 +184,14 @@ restart_container() {
 view_logs() {
     local container_id="$1"
     local container_name="$2"
-    
+
     echo -e "${BLUE}Showing logs for $container_name (Press Ctrl+C to exit)${NC}"
     echo "Choose log options:"
     echo "1) Show last 50 lines"
     echo "2) Follow logs (tail -f)"
     echo "3) Show all logs"
     read -r -p "Enter choice [1-3]: " log_choice
-    
+
     case $log_choice in
         1)
             docker logs --tail 50 "$container_id"
@@ -150,14 +208,43 @@ view_logs() {
     esac
 }
 
+# Export container
+export_container() {
+    local container_id="$1"
+    local container_name="$2"
+
+    read -r -p "Export filename (default: ${container_name}.tar): " export_file
+    export_file=${export_file:-"${container_name}.tar"}
+
+    echo -e "${YELLOW}Exporting $container_name to $export_file${NC}"
+    docker export "$container_id" > "$export_file"
+    echo -e "${GREEN}Container exported successfully${NC}"
+}
+
+# Create image from container
+create_image() {
+    local container_id="$1"
+    local container_name="$2"
+
+    read -r -p "New image name: " image_name
+    read -r -p "Tag (default: latest): " tag
+    tag=${tag:-latest}
+
+    if [[ -n "$image_name" ]]; then
+        echo -e "${YELLOW}Creating image $image_name:$tag from $container_name${NC}"
+        docker commit "$container_id" "$image_name:$tag"
+        echo -e "${GREEN}Image created successfully${NC}"
+    fi
+}
+
 # Execute bash in container
 exec_bash() {
     local container_id="$1"
     local container_name="$2"
-    
+
     echo -e "${BLUE}Executing bash in $container_name${NC}"
     echo "Trying different shells..."
-    
+
     # Try different shells in order of preference
     if docker exec -it "$container_id" bash 2>/dev/null; then
         return
@@ -172,10 +259,10 @@ exec_bash() {
 exec_custom_command() {
     local container_id="$1"
     local container_name="$2"
-    
+
     echo -e "${BLUE}Execute custom command in $container_name${NC}"
     read -r -p "Enter command: " custom_cmd
-    
+
     if [ -n "$custom_cmd" ]; then
         echo -e "${YELLOW}Executing: $custom_cmd${NC}"
         docker exec -it "$container_id" "$custom_cmd"
@@ -192,49 +279,62 @@ exec_custom_command() {
 main() {
     check_dependencies
     check_docker
-    
+
     while true; do
         echo -e "${GREEN}=== Docker Container Manager ===${NC}"
-        
+
         # Select container
         selected=$(select_container)
-        
+
         if [ -z "$selected" ]; then
             echo -e "${YELLOW}No container selected. Exiting.${NC}"
             exit 0
         fi
-        
+
         container_id=$(get_container_id "$selected")
-        container_name=$(get_container_name "$selected")
-        
+        container_image=$(get_container_name "$selected")
+
         # Action loop for selected container
         while true; do
             echo
-            show_actions "$container_name"
+            container_name=$(get_container_name_by_id "$container_id")
+            show_actions "$container_name" "$container_id" "$container_image"
             read -r -p "Enter choice: " action
-            
+
             case $action in
                 1)
+                    start_container "$container_id" "$container_name"
+                    read -r -p "Press Enter to continue..."
+                    ;;
+                2)
                     stop_container "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     break  # Go back to container selection since container is stopped
                     ;;
-                2)
+                3)
                     restart_container "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
-                3)
+                4)
                     view_logs "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
-                4)
+                5)
                     exec_bash "$container_id" "$container_name"
                     ;;
-                5)
+                6)
                     exec_custom_command "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
-                6)
+                7)
+                    export_container "$container_id" "$container_name"
+                    read -r -p "Press Enter to continue..."
+                    ;;
+                8)
+                    create_image "$container_id" "$container_name"
+                    read -r -p "Press Enter to continue..."
+                    ;;
+                b|B)
                     break  # Go back to container selection
                     ;;
                 q|Q)
