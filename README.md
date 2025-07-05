@@ -2,6 +2,8 @@
 
 `dockerctl` is a command-line script designed for interactive management of Docker containers. It simplifies common Docker operations by providing an easy-to-use, menu-driven interface.
 
+![Main screen](media/dockerctl.jpg)
+
 ## Why bash, you madman?
 
 The primary goal for `dockerctl` was to create a simple and portable script. Using Bash shell scripting means:
