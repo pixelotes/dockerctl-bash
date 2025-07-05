@@ -56,6 +56,7 @@ I'm not going to add many features, as I want to keep this script manageable.
 Anyways, here are some possible enhancement I'd like to add:
 
 - [ ] Add a key to toggle between active and stopped containers
+- [ ] Port this script to bashly
 - [X] Show container port mappings
 - [X] Show container volumes
 - [X] Show container network info
