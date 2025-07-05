@@ -85,10 +85,16 @@ Health: \(.State.Health.Status // \"N/A\")
 Image: \(.Config.Image)
 Restart policy: \(.HostConfig.RestartPolicy.Name)
 Binds:
-\((.HostConfig.Binds // [])[]? // \"none\")
+\(
+if (.HostConfig.Binds == \{} or .HostConfig.Binds == null) then
+    \"- none\"
+else
+    (.HostConfig.Binds[] | \"- \(. )\")
+end
+)
 Ports:
 \(
-if (.HostConfig.PortBindings == \{}) then
+if (.HostConfig.PortBindings == \{} or .HostConfig.PortBindings == null) then
     \"- none\"
 else
     ((.HostConfig.PortBindings // . | to_entries[]? | \"- \(.key) (HostPort: \(.value[0].HostPort))\"))
