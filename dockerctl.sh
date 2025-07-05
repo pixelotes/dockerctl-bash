@@ -89,7 +89,7 @@ Binds:
 if (.HostConfig.Binds == \{} or .HostConfig.Binds == null) then
     \"- none\"
 else
-    (.HostConfig.Binds[] | \"- \(. )\")
+    (.HostConfig.Binds | map(\"- \" + .) | join(\"\n\"))
 end
 )
 Ports:
@@ -97,11 +97,17 @@ Ports:
 if (.HostConfig.PortBindings == \{} or .HostConfig.PortBindings == null) then
     \"- none\"
 else
-    ((.HostConfig.PortBindings // . | to_entries[]? | \"- \(.key) (HostPort: \(.value[0].HostPort))\"))
+    (.HostConfig.PortBindings | to_entries | map(\"- \(.key) (HostPort: \(.value[0].HostPort))\") | join(\"\n\"))
 end
 )
 Networks:
-\((.NetworkSettings.Networks | keys[]) | \"- \(. )\")
+\(
+if (.NetworkSettings.Networks == \{} or .NetworkSettings.Networks == null) then
+    \"- none\"
+else
+    (.NetworkSettings.Networks // \{} | keys | map(\"- \" + .) | join(\"\n\"))
+end
+)
 \""' \
     --preview-window=right:50%:wrap \
     --prompt="Container> " \
@@ -158,11 +164,12 @@ show_actions() {
     echo "1) Start container"
     echo "2) Stop container"
     echo "3) Restart container"
-    echo "4) View logs"
-    echo "5) Exec bash"
-    echo "6) Exec custom command"
-    echo "7) Export container to tar"
-    echo "8) Create image from container"
+    echo "4) Delete container"
+    echo "5) View logs"
+    echo "6) Exec bash"
+    echo "7) Exec custom command"
+    echo "8) Export container to tar"
+    echo "9) Create image from container"
     echo "b) Back to container selection"
     echo "q) Quit"
 }
@@ -203,6 +210,19 @@ restart_container() {
         echo -e "${GREEN}Container $container_name restarted successfully${NC}"
     else
         echo -e "${RED}Failed to restart container $container_name${NC}"
+    fi
+}
+
+# Delete container
+delete_container() {
+    local container_id="$1"
+    local container_name="$2"
+
+    echo -e "${YELLOW}Deleting container $container_name...${NC}"
+    if docker rm "$container_id"; then
+        echo -e "${GREEN}Container $container_name deleted successfully${NC}"
+    else
+        echo -e "${RED}Failed to delete container $container_name${NC}"
     fi
 }
 
@@ -342,21 +362,26 @@ main() {
                     read -r -p "Press Enter to continue..."
                     ;;
                 4)
+                    delete_container "$container_id" "$container_name"
+                    read -r -p "Press Enter to continue..."
+                    break  # Go back to container selection since container is deleted
+                    ;;
+                5)
                     view_logs "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
-                5)
+                6)
                     exec_bash "$container_id" "$container_name"
                     ;;
-                6)
+                7)
                     exec_custom_command "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
-                7)
+                8)
                     export_container "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
-                8)
+                9)
                     create_image "$container_id" "$container_name"
                     read -r -p "Press Enter to continue..."
                     ;;
