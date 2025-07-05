@@ -73,29 +73,35 @@ select_container() {
         echo -e "${YELLOW}No running containers found${NC}"
         exit 0
     fi
-    echo "$containers" | fzf \
-        --header="Select a container:" \
-        --header-lines=0 \
-        --preview='docker inspect {1} | jq -r "
-            .[] |
-            \"Id: \(.Id[0:12])
-    Name: \(.Name)
-    Created: \(.Created)
-    Status: \(.State.Status)
-    Health: \(.State.Health.Status)
-    Image: \(.Config.Image)
-    Restart policy: \(.HostConfig.RestartPolicy.Name)
-    Binds:
-    \((.HostConfig.Binds // [])[]? // \"none\")
-    Ports:
-    \(.HostConfig.PortBindings)
-    Networks:
-    \((.NetworkSettings.Networks | keys[]) | \"- \(. )\")\""' \
-        --preview-window=right:50%:wrap \
-        --prompt="Container> " \
-        --height=80% \
-        --border \
-        --ansi
+echo "$containers" | fzf \
+    --header="Select a container:" \
+    --header-lines=0 \
+    --preview='docker inspect {1} | jq -r " .[] | \"
+Id: \(.Id[0:12])
+Name: \(.Name)
+Created: \(.Created)
+Status: \(.State.Status)
+Health: \(.State.Health.Status // \"N/A\")
+Image: \(.Config.Image)
+Restart policy: \(.HostConfig.RestartPolicy.Name)
+Binds:
+\((.HostConfig.Binds // [])[]? // \"none\")
+Ports:
+\(
+if (.HostConfig.PortBindings == \{}) then
+    \"- none\"
+else
+    ((.HostConfig.PortBindings // . | to_entries[]? | \"- \(.key) (HostPort: \(.value[0].HostPort))\"))
+end
+)
+Networks:
+\((.NetworkSettings.Networks | keys[]) | \"- \(. )\")
+\""' \
+    --preview-window=right:50%:wrap \
+    --prompt="Container> " \
+    --height=80% \
+    --border \
+    --ansi
 }
 
 # Extract container ID from selected line
