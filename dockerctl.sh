@@ -76,7 +76,21 @@ select_container() {
     echo "$containers" | fzf \
         --header="Select a container:" \
         --header-lines=0 \
-        --preview='docker inspect {1} | jq -r " .[] | \"Id: \(.Id[0:12])\nName: \(.Name)\nCreated: \(.Created)\nStatus: \(.State.Status)\nHealth: \(.State.Health.Status)\nImage: \(.Config.Image)\nRestart policy: \(.HostConfig.RestartPolicy.Name)\nBinds: \n\((.HostConfig.Binds // [])[]? // \"none\")\nPorts:\n\(.HostConfig.PortBindings)\""' \
+        --preview='docker inspect {1} | jq -r "
+            .[] |
+            \"Id: \(.Id[0:12])
+    Name: \(.Name)
+    Created: \(.Created)
+    Status: \(.State.Status)
+    Health: \(.State.Health.Status)
+    Image: \(.Config.Image)
+    Restart policy: \(.HostConfig.RestartPolicy.Name)
+    Binds:
+    \((.HostConfig.Binds // [])[]? // \"none\")
+    Ports:
+    \(.HostConfig.PortBindings)
+    Networks:
+    \((.NetworkSettings.Networks | keys[]) | \"- \(. )\")\""' \
         --preview-window=right:50%:wrap \
         --prompt="Container> " \
         --height=80% \
