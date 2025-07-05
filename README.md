@@ -58,7 +58,7 @@ Anyways, here are some possible enhancement I'd like to add:
 - [ ] Add a key to toggle between active and stopped containers
 - [X] Show container port mappings
 - [X] Show container volumes
-- [ ] Show container network info
+- [X] Show container network info
 - [X] Ability to export a container
 - [X] Ability to create a new image from the container
 
