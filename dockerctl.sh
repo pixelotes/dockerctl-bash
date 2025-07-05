@@ -78,7 +78,7 @@ echo "$containers" | fzf \
     --header-lines=0 \
     --preview='docker inspect {1} | jq -r " .[] | \"
 Id: \(.Id[0:12])
-Name: \(.Name)
+Name: \(.Name[1:])
 Created: \(.Created)
 Status: \(.State.Status)
 Health: \(.State.Health.Status // \"N/A\")
