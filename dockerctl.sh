@@ -59,7 +59,8 @@ get_containers() {
     done < <(docker ps -a --format "{{.Names}}")
 
     # Get the maximum number of columns available in the terminal
-    local max_cols=$(tput cols)
+    local max_cols
+    max_cols=$(tput cols)
     max_name_length=$(( (max_cols + 6 - 1) / 6 ))
 
     # No-op, icons will be added next to the container ID in the output below
