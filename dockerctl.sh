@@ -58,6 +58,10 @@ get_containers() {
         fi
     done < <(docker ps -a --format "{{.Names}}")
 
+    if [[ $max_name_length -gt 25 ]]; then
+        max_name_length="25"
+    fi
+
     # No-op, icons will be added next to the container ID in the output below
     docker ps -a --format "{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}" | while IFS=$'\t' read -r id image status name; do
         # Determine status icon
@@ -71,10 +75,11 @@ get_containers() {
             icon="⚪"
         fi
 
-        # If max_name_length>25 then we'll truncate it to the first 22 chars + "---"
-        # The full name of the container can be seen in the preview window
-        if [[ $max_name_length -gt 25 ]]; then
-            max_name_length="25"
+        # Get the length of the name
+        local name_length=${#name}
+
+        # If name_length exceeds max_name_length, truncate it
+        if [[ $name_length -gt max_name_length ]]; then
             printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "" "${name:0:22}..." "$image"
         else
             printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "$max_name_length" "$name" "$image"
