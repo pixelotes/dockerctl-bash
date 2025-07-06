@@ -27,6 +27,11 @@ check_dependencies() {
         exit 1
     fi
 
+    if ! command -v jq &> /dev/null; then
+        echo -e "${RED}Error: jq is not installed or not in PATH${NC}"
+        exit 1
+    fi
+
     if ! command -v fzf &> /dev/null; then
         echo -e "${RED}Error: fzf is not installed or not in PATH${NC}"
         echo "Install fzf: https://github.com/junegunn/fzf#installation"
