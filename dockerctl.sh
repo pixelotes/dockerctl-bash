@@ -52,10 +52,9 @@ get_containers() {
 
     # Get the max lengths for formatting
     while IFS= read -r line; do
-        name=$(echo "$line")
         # Update max lengths
-        if [[ ${#name} -gt max_name_length ]]; then
-            max_name_length=${#name}
+        if [[ ${#line} -gt max_name_length ]]; then
+            max_name_length=${#line}
         fi
     done < <(docker ps -a --format "{{.Names}}")
 
