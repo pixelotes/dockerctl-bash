@@ -58,9 +58,9 @@ get_containers() {
         fi
     done < <(docker ps -a --format "{{.Names}}")
 
-    if [[ $max_name_length -gt 25 ]]; then
-        max_name_length="25"
-    fi
+    # Get the maximum number of columns available in the terminal
+    local max_cols=$(tput cols)
+    max_name_length=$(( (max_cols + 6 - 1) / 6 ))
 
     # No-op, icons will be added next to the container ID in the output below
     docker ps -a --format "{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}" | while IFS=$'\t' read -r id image status name; do
@@ -75,12 +75,13 @@ get_containers() {
             icon="⚪"
         fi
 
-        # Get the length of the name
+        # Get the length of the container name
         local name_length=${#name}
 
-        # If name_length exceeds max_name_length, truncate it
+        # If container name exceeds max_name_length, truncate it
         if [[ $name_length -gt max_name_length ]]; then
-            printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "" "${name:0:22}..." "$image"
+            local i=$((max_name_length - 3))
+            printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "$max_name_length" "${name:0:i}..." "$image"
         else
             printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "$max_name_length" "$name" "$image"
         fi
