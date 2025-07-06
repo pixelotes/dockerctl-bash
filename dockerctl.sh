@@ -48,6 +48,17 @@ check_docker() {
 
 # Get running containers with status icon
 get_containers() {
+    local max_name_length=0
+
+    # Get the max lengths for formatting
+    while IFS= read -r line; do
+        name=$(echo "$line")
+        # Update max lengths
+        if [[ ${#name} -gt max_name_length ]]; then
+            max_name_length=${#name}
+        fi
+    done < <(docker ps -a --format "{{.Names}}")
+
     # No-op, icons will be added next to the container ID in the output below
     docker ps -a --format "{{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}" | while IFS=$'\t' read -r id image status name; do
         # Determine status icon
@@ -60,7 +71,16 @@ get_containers() {
         else
             icon="⚪"
         fi
-        printf "%s\t%s\t%s\n" "$id" "$icon $name" "$image"
+
+        # If max_name_length>25 then we'll truncate it to the first 22 chars + "---"
+        # The full name of the container can be seen in the preview window
+        if [[ $max_name_length -gt 25 ]]; then
+            max_name_length="25"
+            printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "" "${name:0:22}..." "$image"
+        else
+            printf "%-12s  %-1s %-*s  %s\n" "$id" "$icon" "$max_name_length" "$name" "$image"
+        fi
+
     done
 }
 
@@ -111,7 +131,7 @@ end
 \""' \
     --preview-window=right:50%:wrap \
     --prompt="Container> " \
-    --height=80% \
+    --height=90% \
     --border \
     --ansi
 }
